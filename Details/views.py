@@ -4,6 +4,8 @@ from django.template import loader
 from django.urls import reverse
 from .models import Students
 from .models import Departmant
+from datetime import date
+
 
 # Create your views here.
 # d
@@ -14,10 +16,17 @@ def home(request):
 
 def index(request):
     mymembers = Students.objects.all().values()
+    today = date.today()
+    for mymember in mymembers:
+      mymember['age']= today.year - mymember['dob'].year - ((today.month, today.day) < (mymember['dob'].month, mymember['dob'].day))
+      a = Students.objects.get(pk=mymember['id'])
+      a.age = mymember['age']
+      a.save()
     template = loader.get_template('index.html')
     context = {
         'mymembers': mymembers,
             }
+    print(context)
     return HttpResponse(template.render(context, request))
 
 def index_dept(request):
@@ -44,7 +53,8 @@ def addrecord_student(request):
   c = request.POST['department']
   d = request.POST['course']
   e = request.POST['semester_num']
-  Details = Students(firstname=x, lastname=y, dob=a, roll_number=b, department= c, course=d, semester_num= e)
+  f = request.POST['marks']
+  Details = Students(firstname=x, lastname=y, dob=a, roll_number=b, department= c, course=d, semester_num= e, marks= f)
   Details.save()
   return HttpResponseRedirect(reverse('index'))
 
@@ -112,3 +122,20 @@ def updaterecord_dept(request, id):
   Details.num_teachers= num_teachers
   Details.save()
   return HttpResponseRedirect(reverse('index_dept'))
+
+def calculateage(age):
+  daya_in_year = 365.2425
+  age = int((date.today() - birthDate).days / days_in_year)
+  return age
+
+
+def calc_age(Students,id, request):
+  mymembers = Students.objects.all().values().get(id=id)
+  template = loader.get_template('index.html')
+  context = {
+    'mymembers': mymembers,
+  }
+  days_in_year = 365.2425
+  birthDate = Students.dob
+  age = int((date.today() - birthDate).days / days_in_year)
+  return HttpResponse(template.render(context, request, age))
